@@ -11,7 +11,9 @@ from werkzeug.security import check_password_hash,generate_password_hash
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.environ.get(
-    "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
+    # "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
+    "DB_URI", f"postgresql://robert:d0KU0b3VMlQkb6t4eH7qwyqUaNxDHdJx@dpg-csouttd6l47c73969tg0-a/gizmo_315a")
+
 #upload images assist
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static')
 ALLOWED_EXTENSIONS=set(['png','jpeg','jpg'])
@@ -36,6 +38,11 @@ jwt=JWTManager(app)
 
 # CORS(app, resources={r"/elections/*": {"origins": "https://electra-dummy-1.onrender.com"}})
 
+class Home(Resource):
+    def get(self):
+        return make_response({"msg":"Homepage here"})
+    
+api.add_resource(Home,'/')
 class Signup(Resource):
     def post(self):
         data=request.get_json()
