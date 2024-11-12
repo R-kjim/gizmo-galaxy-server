@@ -25,8 +25,8 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] =secrets.token_hex(32)
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)  
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)  
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 app.config['UPLOAD_FOLDER']=UPLOAD_FOLDER
 
 
@@ -41,7 +41,7 @@ jwt=JWTManager(app)
 class Home(Resource):
     def get(self):
         return make_response({"msg":"Homepage here"},200)
-    
+
 api.add_resource(Home,'/')
 class Signup(Resource):
     def post(self):
@@ -79,6 +79,43 @@ class Login(Resource):
             return make_response({"msg":"email not registered"},404)
         return make_response({"msg":"Invalid data"})
 api.add_resource(Login,'/login')
+
+class Product_By_Id(Resource):
+    def get(self,id):
+        product=Product.query.filter_by(id=id).first()
+        if product:
+            return make_response(product.to_dict(),200)
+        return make_response({"msg":"Product not found"},404)
+    def delete(self,id):
+        product=Product.query.filter_by(id=id).first()
+        if product:
+            db.session.delete(product)
+            db.session.commit()
+            return make_response({"msg":"Product deleted successfully"},204)
+        return make_response({"msg":"Product not found"},404)
+    def patch(self,id):
+        product=Product.query.filter_by(id=id).first()
+        if product:
+            data=request.get_json()
+            #update product attributes only
+            for attr in data:
+                if attr in ['name','description','category_id','purchase_price','selling_price','discount','quantity','tax_id']:
+                    setattr(product,attr,data.get(attr))
+                db.session.add(product)
+                db.session.commit()
+                if attr=='features':
+                    for feature in data.get("features"):
+                        new_feature=Feature(description=feature,product_id=product.id)
+                        db.session.add(new_feature)
+                        db.session.commit()
+                if attr=='images':
+                    for image in data.get("images"):
+                        new_image=Images(image_url=image,product_id=product.id)
+                        db.session.add(new_image)
+                        db.session.commit()
+            return make_response(product.to_dict(),200)
+        return make_response({"msg":"Product not found"},404)
+api.add_resource(Product_By_Id,'/product/<int:id>')
 
 
 if __name__=="__main__":
