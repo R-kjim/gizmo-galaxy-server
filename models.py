@@ -9,7 +9,7 @@ metadata = MetaData()
 db = SQLAlchemy(metadata=metadata)
 
 class User(db.Model,SerializerMixin):
-    __tablename__='users' 
+    __tablename__='users'
 
     id=db.Column(db.Integer,primary_key=True)
     first_name=db.Column(db.String, nullable=False)
@@ -95,7 +95,8 @@ class Order(db.Model,SerializerMixin):
     user=db.relationship("User",back_populates='orders')
     products=db.relationship("OrderProducts",back_populates='order')
     payment=db.relationship("Payment",back_populates='order')
-    sale=db.relationship("Sale",back_populates="order")
+    sale=db.relationship("Sales",back_populates="order")
+
     #serialize rules
     serialize_rules=("-user.orders",'-products.order','payment.order','-sale.order')
 
