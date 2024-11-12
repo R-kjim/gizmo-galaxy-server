@@ -1,4 +1,4 @@
-from models import db,User,Product,Payment,OrderProducts,Review,Images,Order
+from models import db,User,Product,Payment,OrderProducts,Review,Images,Order,Feature
 from flask_migrate import Migrate
 from flask import Flask, request, make_response,jsonify
 from flask_restful import Api, Resource
@@ -116,6 +116,40 @@ class Product_By_Id(Resource):
             return make_response(product.to_dict(),200)
         return make_response({"msg":"Product not found"},404)
 api.add_resource(Product_By_Id,'/product/<int:id>')
+
+
+class Add_Get_Product(Resource):
+    def get(self):
+        products=Product.query.all()
+        return make_response([product.to_dict() for product in products],200)
+    
+    @jwt_required()
+    def post(self):
+        id=get_jwt_identity()
+        if id:
+            data=request.get_json()
+            if 'name' in data and 'description' in data and 'category_id' in data and 'purchase_price' in data and 'selling_price' in data and 'images' in data and 'features' in data:
+                new_product=Product(name=data.get("name"),description=data.get("description"),category_id="category_id",purchase_price=data.get("purchase_price"),
+                                    selling_price=data.get("selling_price"),quantity=data.get("quantity",0),added_by=id,
+                                    tax_id=data.get("tax_id",None),date_added=datetime.datetime.now())
+                db.session.add(new_product)
+                db.session.commit()
+                images=data.get("images") #an array of images urls
+                #loop through the images array to post each image and associate it with the newly added product
+                for image in images:
+                    new_image=Images(image_url=image,product_id=new_product.id)
+                    db.session.add(new_image)
+                    db.session.commit()
+                features=data.get("features") #an array of product features
+                #loop through the features array and add each feature, associating it with the newly added product
+                for feature in features:
+                    new_feature=Feature(description=feature,product_id=new_product.id)
+                    db.session.add(new_feature)
+                    db.session.commit()
+                return make_response(new_product.to_dict(),201)
+            return make_response({"msg":"Required data missing"},400)
+        return make_response({"msg":"User session expired"},400)   
+api.add_resource(Add_Get_Product,'/products')
 
 
 if __name__=="__main__":
