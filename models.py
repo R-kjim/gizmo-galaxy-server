@@ -17,6 +17,7 @@ class User(db.Model,SerializerMixin):
     email=db.Column(db.String, unique=True)
     password=db.Column(db.String,nullable=False)
     role=db.Column(db.String,nullable=False)
+    status=db.Column(db.String, nullable=False)
     date_created=db.Column(db.DateTime)
     #Relationships
     products=db.relationship('Product',back_populates='admin')
@@ -33,7 +34,9 @@ class Product(db.Model,SerializerMixin):
     description=db.Column(db.String, nullable=False)
     category_id=db.Column(db.String,db.ForeignKey("categories.id"))
     purchase_price=db.Column(db.Float, nullable=False)
+    purchase_price_excl_tax=db.Column(db.Float,nullable=False)
     selling_price=db.Column(db.Float, nullable=False)
+    selling_price_excl_tax=db.Column(db.Float,nullable=False)
     discount=db.Column(db.Float, default=0)
     quantity=db.Column(db.Integer,default=0)
     rating=db.Column(db.Float, default=0)
@@ -49,7 +52,10 @@ class Product(db.Model,SerializerMixin):
     features=db.relationship("Feature",back_populates='product')
     tax=db.relationship("Tax",back_populates="products")
     #serialize rules
-    serialize_rules=('-admin','-image_url.product','-product_reviews.product','-orders.product','-categories.products','-features.product','-tax')
+    # serialize_rules=('-admin','-image_url.product','-product_reviews.product','-orders.product','-categories.products','-features.product','-tax',
+    #                  '-category.products','-category_id','-category.id')
+    serialize_only=('description','name','id','purchase_price',"purchase_price_excl_tax","selling_price","selling_price_excl_tax",
+                    'quantity','category.name','image_url.image_url','features.description')
 
 class Images(db.Model,SerializerMixin):
     #stores image urls of uploaded images relating to a certain product
@@ -68,8 +74,9 @@ class Review(db.Model,SerializerMixin):
     __tablename__='reviews'
 
     id=db.Column(db.Integer,primary_key=True)
+    rating=db.Column(db.Integer,nullable=False)
     description=db.Column(db.String(100))
-    status=db.Column(db.String)
+    # status=db.Column(db.String)
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
     product_id=db.Column(db.Integer, db.ForeignKey("products.id"))
     date_created=db.Column(db.DateTime)
@@ -98,7 +105,8 @@ class Order(db.Model,SerializerMixin):
     sale=db.relationship("Sales",back_populates="order")
 
     #serialize rules
-    serialize_rules=("-user.orders",'-products.order','payment.order','-sale.order')
+    serialize_rules=("-user.orders",'-products.order','-payment.order','-sale.order',
+                     '-products.id','-products.order_id','-sale')
 
 class OrderProducts(db.Model,SerializerMixin):
     __tablename__='orderproducts'
@@ -106,13 +114,13 @@ class OrderProducts(db.Model,SerializerMixin):
     id=db.Column(db.Integer, primary_key=True)
     product_id=db.Column(db.Integer, db.ForeignKey("products.id"))
     order_id=db.Column(db.Integer, db.ForeignKey("orders.id"))
-    quantity=db.Column(db.Integer, nullable=False, default=1)
+    quantity=db.Column(db.Integer, nullable=False)
     #relationships
     product=db.relationship("Product", back_populates='orders')
     order=db.relationship("Order", back_populates="products")
 
     #serialize rules
-    serialize_rules=('-product','-order')
+    serialize_rules=('-product.orders','-order')
 
 class Payment(db.Model,SerializerMixin):
     __tablename__='payments'
@@ -132,6 +140,7 @@ class Category(db.Model,SerializerMixin):
 
     id=db.Column(db.Integer, primary_key=True)
     name=db.Column(db.String, nullable=False)
+    description=db.Column(db.String)
     #relationships
     products=db.relationship("Product",back_populates="category")
     #seriaise rules
