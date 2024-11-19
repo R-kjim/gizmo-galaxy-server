@@ -32,6 +32,7 @@ def create_password(shortcode,passkey,timestamp):
     bs4 = bs4.decode()
     return bs4
 
+
 def format_phone_number(number):
     number_str=str(number)
     if number_str.startswith('07') or number_str.startswith('01'):
