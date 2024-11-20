@@ -97,7 +97,7 @@ class Order(db.Model,SerializerMixin):
     shipping_address=db.Column(db.String, nullable=False)
     date=db.Column(db.DateTime)
     user_id=db.Column(db.Integer, db.ForeignKey("users.id"))
-
+    payment_status=db.Column(db.String,nullable=False)
     #relationships
     user=db.relationship("User",back_populates='orders')
     products=db.relationship("OrderProducts",back_populates='order')
@@ -129,11 +129,13 @@ class Payment(db.Model,SerializerMixin):
     amount=db.Column(db.Integer, nullable=False)
     transaction_id=db.Column(db.String)
     order_id=db.Column(db.Integer, db.ForeignKey("orders.id"))
+    status=db.Column(db.String,nullable=False)
+    date=db.Column(db.DateTime)
     #relationships
     order=db.relationship("Order", back_populates="payment")
 
     #serialize rules
-    serialize_rules=('-order.payment')
+    serialize_rules=('-order.payment',)
 
 class Category(db.Model,SerializerMixin):
     __tablename__='categories'
@@ -179,3 +181,14 @@ class Sales(db.Model,SerializerMixin):
     order=db.relationship("Order", back_populates="sale")
     #serialise rules
     serialize_rules=('-order.sale')
+
+
+# class Transaction(db.Model,SerializerMixin):
+#     __tablename__="transactions"
+
+#     id=db.Column(db.Integer,primary_key=True)
+#     amount=db.Column(db.Float,nullable=False)
+#     transaction_code=db.Column(db.String,nullable=False)
+#     date=db.Column(db.DateTime, nullable=False)
+#     status=db.Column(db.String,nullable=False)
+#     user_id=db.Column(db.Integer, db.ForeignKey('users.id'))
