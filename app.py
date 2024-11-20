@@ -55,6 +55,13 @@ class Home(Resource):
         return make_response({"msg":"Homepage here"},200)
 api.add_resource(Home,'/')
 
+@app.before_request
+def handle_options_request():
+    if request.method == "OPTIONS":
+        response = make_response("", 200)
+        response.headers["Allow"] = ("GET, POST, PUT, DELETE, OPTIONS", "PATCH")
+        return response
+
 class Signup(Resource):
     def post(self):
         data=request.get_json()

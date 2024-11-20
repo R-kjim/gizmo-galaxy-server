@@ -86,7 +86,7 @@ class Initiate_Payment(Resource):
                 "PartyA":"254708374149",    
                 "PartyB":174379,
                 "PhoneNumber":formated_phone_number,    
-                "CallBackURL": "https://ape-grateful-sadly.ngrok-free.app/payment-result",    
+                "CallBackURL": "https://gizmo.nullchemy.com/payment-result",    
                 "AccountReference":"Test",    
                 "TransactionDesc":"Payment for gizmo galaxy"
                 }
