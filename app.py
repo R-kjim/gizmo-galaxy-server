@@ -405,7 +405,7 @@ api.add_resource(Create_Get_Review,'/reviews')
 
 
 class SalesAnalytics(Resource):
-    @jwt_required()
+   
     def get(self):
         try:
             # Get total orders and revenue
@@ -441,7 +441,7 @@ class SalesAnalytics(Resource):
             most_sold = sorted_by_quantity[-1] if sorted_by_quantity else None
 
             # sales trend (last 7 days)
-            seven_days_ago = datetime.now() - timedelta(days=7)
+            seven_days_ago = datetime.datetime.now() - timedelta(days=7)
             daily_sales = db.session.query(
                 func.date(Order.date).label('date'),
                 func.sum(Order.amount).label('daily_revenue'),
