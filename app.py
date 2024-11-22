@@ -11,7 +11,7 @@ from werkzeug.security import check_password_hash,generate_password_hash
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-
+from payments import Initiate_Payment,Payment_result
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.environ.get(
@@ -54,6 +54,13 @@ class Home(Resource):
     def get(self):
         return make_response({"msg":"Homepage here"},200)
 api.add_resource(Home,'/')
+
+@app.before_request
+def handle_options_request():
+    if request.method == "OPTIONS":
+        response = make_response("", 200)
+        response.headers["Allow"] = ("GET, POST, PUT, DELETE, OPTIONS", "PATCH")
+        return response
 
 class Signup(Resource):
     def post(self):
@@ -180,7 +187,7 @@ class Add_Get_Product(Resource):
         files=request.files.getlist('file') #gets all the files from the data that have a key of 'file'
         product_data=request.form.get('product_data') #gets data saved under the key 'product_data'
         if product_data and len(files)>0:
-            data=json.loads(product_data)
+            data=json.loads(product_data) #converts data into json format
             if all(item in data for item in ["name",'description','category_id','purchase_price','selling_price','features']): #ensure that required data is not missing
                 product=Product.query.filter_by(name=data.get("name")).first()
                 if product:
@@ -327,7 +334,7 @@ class Tax_Category_By_Id(Resource):
 api.add_resource(Tax_Category_By_Id,'/tax-category/<int:id>')
     
 class Create_Get_Order(Resource):
-    @jwt_required()
+    # @jwt_required()
     #get all orders
     def get(self):
         orders=Order.query.all()
@@ -352,7 +359,7 @@ class Create_Get_Order(Resource):
 api.add_resource(Create_Get_Order,'/orders')
 
 class Order_By_Id(Resource):
-    @jwt_required()
+    # @jwt_required()
     def get(self,id):
         order=Order.query.filter_by(id=id).first()
         if order:
@@ -403,5 +410,7 @@ class Create_Get_Review(Resource):
 api.add_resource(Create_Get_Review,'/reviews')
 
 
+api.add_resource(Initiate_Payment,'/payments')
+api.add_resource(Payment_result,'/payment-result')
 if __name__=="__main__":
     app.run(debug=True)
