@@ -11,6 +11,7 @@ from werkzeug.security import check_password_hash,generate_password_hash
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from sqlalchemy import func
 from payments import Initiate_Payment,Payment_result
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -410,7 +411,86 @@ class Create_Get_Review(Resource):
 api.add_resource(Create_Get_Review,'/reviews')
 
 
+class SalesAnalytics(Resource):
+   
+    def get(self):
+        try:
+            # Get total orders and revenue
+            total_revenue = db.session.query(func.sum(Order.amount)).scalar() or 0
+            total_orders = Order.query.count()
+
+            # Get product sales analitics
+            product_sales = db.session.query(
+                Product.id,
+                Product.name,
+                func.sum(OrderProducts.quantity).label('total_quantity_sold'),
+                func.count(OrderProducts.id).label('order_count')
+            ).join(
+                OrderProducts, Product.id == OrderProducts.product_id
+            ).group_by(
+                Product.id
+            ).all()
+
+            #  results
+            products_analytics = []
+            for product in product_sales:
+                product_dict = {
+                    'id': product.id,
+                    'name': product.name,
+                    'total_quantity_sold': product.total_quantity_sold or 0,
+                    'order_count': product.order_count or 0
+                }
+                products_analytics.append(product_dict)
+
+
+            sorted_by_quantity = sorted(products_analytics, key=lambda x: x['total_quantity_sold'])
+            least_sold = sorted_by_quantity[0] if sorted_by_quantity else None
+            most_sold = sorted_by_quantity[-1] if sorted_by_quantity else None
+
+            # sales trend (last 7 days)
+            seven_days_ago = datetime.datetime.now() - timedelta(days=7)
+            daily_sales = db.session.query(
+                func.date(Order.date).label('date'),
+                func.sum(Order.amount).label('daily_revenue'),
+                func.count(Order.id).label('order_count')
+            ).filter(
+                Order.date >= seven_days_ago
+            ).group_by(
+                func.date(Order.date)
+            ).all()
+
+            daily_sales_data = [
+                {
+                    'date': str(day.date),
+                    'revenue': float(day.daily_revenue) if day.daily_revenue else 0,
+                    'order_count': day.order_count
+                }
+                for day in daily_sales
+            ]
+
+            analytics_data = {
+                'overall_metrics': {
+                    'total_revenue': float(total_revenue),
+                    'total_orders': total_orders,
+                    'average_order_value': float(total_revenue/total_orders) if total_orders > 0 else 0
+                },
+                'product_metrics': {
+                    'most_sold_product': most_sold,
+                    'least_sold_product': least_sold,
+                    'all_products': products_analytics
+                },
+                'sales_trend': daily_sales_data
+            }
+
+            return make_response(analytics_data, 200)
+        except Exception as e:
+            return make_response({'error': str(e)}, 500)
+
+
+api.add_resource(SalesAnalytics, '/sales-analytics')
+
 api.add_resource(Initiate_Payment,'/payments')
 api.add_resource(Payment_result,'/payment-result')
+
 if __name__=="__main__":
     app.run(debug=True)
